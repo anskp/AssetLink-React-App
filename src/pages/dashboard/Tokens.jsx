@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ClientLayout from '../../components/ClientLayout';
 import { Coins, Plus, RefreshCw } from 'lucide-react';
+import { authenticatedFetch } from '../../utils/auth';
 
 export default function Tokens() {
   const [custodyRecords, setCustodyRecords] = useState([]);
@@ -32,12 +33,9 @@ export default function Tokens() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('accessToken');
       
       // Fetch custody records (only LINKED ones can be minted)
-      const custodyResponse = await fetch('http://localhost:3000/v1/custody/dashboard?status=LINKED', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const custodyResponse = await authenticatedFetch('http://localhost:3000/v1/custody/dashboard?status=LINKED');
       
       if (custodyResponse.ok) {
         const custodyData = await custodyResponse.json();
@@ -45,17 +43,13 @@ export default function Tokens() {
       }
 
       // Fetch mint operations
-      const opsResponse = await fetch('http://localhost:3000/v1/operations/dashboard?operationType=MINT', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const opsResponse = await authenticatedFetch('http://localhost:3000/v1/operations/dashboard?operationType=MINT');
       
       if (opsResponse.ok) {
         const opsData = await opsResponse.json();
         
         // Fetch all custody records once
-        const allCustodyResp = await fetch(`http://localhost:3000/v1/custody/dashboard`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const allCustodyResp = await authenticatedFetch(`http://localhost:3000/v1/custody/dashboard`);
         
         let allCustodyRecords = [];
         if (allCustodyResp.ok) {
@@ -98,12 +92,10 @@ export default function Tokens() {
 
     try {
       setSubmitting(true);
-      const token = localStorage.getItem('accessToken');
       
-      const response = await fetch('http://localhost:3000/v1/operations/dashboard/mint', {
+      const response = await authenticatedFetch('http://localhost:3000/v1/operations/dashboard/mint', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -145,11 +137,9 @@ export default function Tokens() {
 
     try {
       setApprovingId(operationId); // Set loading state
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:3000/v1/operations/dashboard/${operationId}/approve`, {
+      const response = await authenticatedFetch(`http://localhost:3000/v1/operations/dashboard/${operationId}/approve`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -174,11 +164,9 @@ export default function Tokens() {
     if (reason === null) return; // User cancelled
 
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:3000/v1/operations/dashboard/${operationId}/reject`, {
+      const response = await authenticatedFetch(`http://localhost:3000/v1/operations/dashboard/${operationId}/reject`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ reason: reason || 'No reason provided' })

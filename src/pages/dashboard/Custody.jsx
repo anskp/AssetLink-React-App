@@ -9,13 +9,24 @@ export default function Custody() {
   const [showDetailsModal, setShowDetailsModal] = useState(null);
   const [assetId, setAssetId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [fetchingRef, setFetchingRef] = useState(false);
 
   useEffect(() => {
-    fetchCustodyRecords();
+    // Prevent duplicate fetches
+    if (!fetchingRef) {
+      fetchCustodyRecords();
+    }
   }, []);
 
   const fetchCustodyRecords = async () => {
+    // Prevent duplicate concurrent requests
+    if (fetchingRef) {
+      console.log('Fetch already in progress, skipping...');
+      return;
+    }
+
     try {
+      setFetchingRef(true);
       setLoading(true);
       const token = localStorage.getItem('accessToken');
       const response = await fetch('http://localhost:3000/v1/custody/dashboard', {
@@ -35,6 +46,7 @@ export default function Custody() {
       setCustodyRecords([]);
     } finally {
       setLoading(false);
+      setFetchingRef(false);
     }
   };
 
