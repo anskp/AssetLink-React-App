@@ -29,16 +29,16 @@ export default function Custody() {
       setFetchingRef(true);
       setLoading(true);
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:3000/v1/custody/dashboard', {
+      const response = await fetch('http://localhost:3000/v1/custody/dashboard?scope=all', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setCustodyRecords(data.records || []);
     } catch (error) {
@@ -68,12 +68,12 @@ export default function Custody() {
         },
         body: JSON.stringify({ assetId: assetId.trim() })
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error?.message || 'Failed to link asset');
       }
-      
+
       alert('Asset link request submitted! Status: PENDING approval');
       setAssetId('');
       setShowLinkForm(false);
@@ -98,12 +98,12 @@ export default function Custody() {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error?.message || 'Failed to approve');
       }
-      
+
       alert('Asset approved and linked to custody!');
       setShowDetailsModal(null);
       fetchCustodyRecords();
@@ -127,12 +127,12 @@ export default function Custody() {
         },
         body: JSON.stringify({ reason: reason || 'No reason provided' })
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error?.message || 'Failed to reject');
       }
-      
+
       alert('Asset link request rejected');
       setShowDetailsModal(null);
       fetchCustodyRecords();
@@ -150,7 +150,7 @@ export default function Custody() {
       MINTED: { bg: 'rgba(0,100,255,0.2)', border: '#06F', color: '#06F' }
     };
     const style = styles[status] || styles.PENDING;
-    
+
     return (
       <span style={{
         padding: '0.25rem 0.75rem',
@@ -210,9 +210,9 @@ export default function Custody() {
         </div>
 
         {/* Info Box */}
-        <div style={{ 
-          marginBottom: '2rem', 
-          padding: '1.5rem', 
+        <div style={{
+          marginBottom: '2rem',
+          padding: '1.5rem',
           border: '1px solid #FFF',
           backgroundColor: 'rgba(255,255,255,0.05)'
         }}>
@@ -228,9 +228,9 @@ export default function Custody() {
 
         {/* Link Asset Form */}
         {showLinkForm && (
-          <div style={{ 
-            marginBottom: '2rem', 
-            padding: '1.5rem', 
+          <div style={{
+            marginBottom: '2rem',
+            padding: '1.5rem',
             border: '1px solid #FFF',
             backgroundColor: 'rgba(255,255,255,0.05)'
           }}>
@@ -297,9 +297,9 @@ export default function Custody() {
 
         {/* Custody Records List */}
         {custodyRecords.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '3rem', 
+          <div style={{
+            textAlign: 'center',
+            padding: '3rem',
             border: '2px dashed rgba(255,255,255,0.3)'
           }}>
             <Database size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
@@ -313,11 +313,11 @@ export default function Custody() {
         ) : (
           <div style={{ display: 'grid', gap: '1rem' }}>
             {custodyRecords.map((record) => (
-              <div key={record.id} style={{ 
-                border: '1px solid #FFF', 
+              <div style={{
+                border: '1px solid #FFF',
                 padding: '1.5rem',
                 display: 'grid',
-                gridTemplateColumns: '1fr auto auto',
+                gridTemplateColumns: '1fr 1fr auto auto', // Added column for Creator
                 gap: '1rem',
                 alignItems: 'center'
               }}>
@@ -325,25 +325,37 @@ export default function Custody() {
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
                     {record.assetId}
                   </h3>
-                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
-                    <span>Created by: <strong>{record.createdBy}</strong></span>
-                    <span>Linked: {new Date(record.linkedAt).toLocaleDateString()}</span>
+                  <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
+                    Linked: {new Date(record.linkedAt || record.createdAt).toLocaleDateString()}
                   </div>
                 </div>
-                
+
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>CREATOR</div>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    fontFamily: 'monospace',
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    padding: '0.25rem 0.5rem',
+                    display: 'inline-block'
+                  }}>
+                    {record.createdBy}
+                  </div>
+                </div>
+
                 <span style={{
                   padding: '0.5rem 1rem',
                   border: '1px solid #FFF',
                   backgroundColor: record.status === 'PENDING' ? 'rgba(255,255,0,0.1)' :
-                                 record.status === 'LINKED' ? 'rgba(0,255,0,0.1)' : 
-                                 record.status === 'UNLINKED' ? 'rgba(255,0,0,0.1)' :
-                                 'rgba(100,100,100,0.1)',
+                    record.status === 'LINKED' ? 'rgba(0,255,0,0.1)' :
+                      record.status === 'UNLINKED' ? 'rgba(255,0,0,0.1)' :
+                        'rgba(100,100,100,0.1)',
                   fontSize: '0.75rem',
                   textTransform: 'uppercase',
                   fontWeight: 'bold',
                   color: record.status === 'PENDING' ? '#FF0' :
-                         record.status === 'LINKED' ? '#0F0' : 
-                         record.status === 'UNLINKED' ? '#F00' : '#FFF'
+                    record.status === 'LINKED' ? '#0F0' :
+                      record.status === 'UNLINKED' ? '#F00' : '#FFF'
                 }}>
                   {record.status}
                 </span>
@@ -395,7 +407,7 @@ export default function Custody() {
               <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', textTransform: 'uppercase' }}>
                 Asset Details
               </h2>
-              
+
               <div style={{ marginBottom: '2rem' }}>
                 <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
                   <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.25rem' }}>
@@ -426,8 +438,8 @@ export default function Custody() {
                 </div>
 
                 {showDetailsModal.details && (
-                  <div style={{ 
-                    padding: '1rem', 
+                  <div style={{
+                    padding: '1rem',
                     border: '1px solid rgba(255,255,255,0.3)',
                     backgroundColor: 'rgba(255,255,255,0.05)'
                   }}>
